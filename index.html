@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOAT GAMING PRO - نظام إدارة صالة الألعاب المطور</title>
+    <!-- تمكين تثبيت التطبيق على الهواتف والأجهزة Manifest ربط ملف الـ -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GOAT GAMING">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF مكتبة الطباعة وتصدير -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style> 
+        body { font-family: 'Cairo', sans-serif; } 
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen transition-colors duration-300">
+
+    <!-- زر التثبيت PWA المباشر -->
+    <div id="installContainer" class="hidden fixed bottom-4 left-4 z-50 bg-amber-500 text-slate-950 px-4 py-3 rounded-2xl shadow-2xl font-black flex items-center gap-3 animate-bounce">
+        <i class="fa-solid fa-download text-lg"></i>
+        <span>تثبيت التطبيق على هاتفك</span>
+        <button id="installBtn" class="bg-slate-950 text-amber-400 px-3 py-1.5 rounded-xl text-xs">تثبيت</button>
+    </div>
+
+    <!-- رأس الصفحة -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-4 px-6 sticky top-0 z-40 shadow-xl">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center text-2xl text-slate-950 font-black shadow-lg shadow-amber-500/20"><i class="fa-solid fa-crown"></i></div>
+                <div>
+                    <h1 class="text-xl font-black text-white flex items-center gap-2">GOAT GAMING <span class="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">PRO v2.5</span></h1>
+                    <span class="text-xs text-slate-400 font-bold">إدارة الشاشات، المبيعات، الثيمات وتقارير PDF</span>
+                </div>
+            </div>
+
+            <!-- أزرار التحكم والتحويل -->
+            <div class="flex items-center flex-wrap gap-3">
+                <button onclick="toggleDarkMode()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2.5 rounded-xl border border-slate-700 transition" title="تبديل الثيم"><i class="fa-solid fa-moon text-sm" id="themeIcon"></i></button>
+                <button onclick="openPdfReportModal()" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-4 py-2.5 rounded-xl border border-emerald-500/30 font-bold text-xs flex items-center gap-2 transition"><i class="fa-solid fa-file-pdf"></i> تقرير الشاشات (3 & 4)</button>
+                <button onclick="openExpensesModal()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-4 py-2.5 rounded-xl border border-rose-500/30 font-bold text-xs flex items-center gap-2 transition"><i class="fa-solid fa-receipt"></i> مصروف</button>
+                <button onclick="openSettingsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-xl border border-slate-700 font-bold text-xs flex items-center gap-2 transition"><i class="fa-solid fa-gear"></i> الإعدادات</button>
+                <button onclick="exportDataJSON()" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-3 py-2.5 rounded-xl border border-blue-500/30 font-bold text-xs transition" title="تصدير نسخة احتياطية"><i class="fa-solid fa-download"></i></button>
+
+                <div class="bg-slate-900 px-4 py-2 rounded-2xl border border-slate-800 flex items-center gap-4 shadow-inner">
+                    <div>
+                        <span class="text-[10px] text-slate-400 block font-bold">صافي الربح:</span>
+                        <strong id="netProfit" class="text-blue-400 text-sm font-black">0 ليرة</strong>
+                    </div>
+                    <div class="h-6 w-[1px] bg-slate-800"></div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 block font-bold">إجمالي المدخول:</span>
+                        <strong id="totalRevenue" class="text-emerald-400 text-base font-black">0 ليرة</strong>
+                    </div>
+                    <button onclick="resetDailyRevenue()" class="text-xs bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white p-2 rounded-xl transition" title="تصفير الصندوق اليومي"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 space-y-8">
+        
+        <!-- قسم المبيعات الخارجية العامة -->
+        <div class="bg-slate-900 rounded-3xl p-6 border border-amber-500/30 shadow-xl">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center"><i class="fa-solid fa-basket-shopping"></i></div>
+                <h2 class="text-base font-black text-white">قسم المبيعات الخارجية العامة (بسكوت، بطاطا، براد، أركيلة)</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+                <div>
+                    <label class="text-xs text-slate-300 block mb-1 font-bold">بسكوت (العدد / السعر):</label>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <input type="number" id="genBiscuitQty" min="0" value="0" placeholder="العدد" class="bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs text-center font-bold">
+                        <input type="number" id="genBiscuitPrice" min="0" value="0" placeholder="السعر" class="bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs text-center font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-300 block mb-1 font-bold">بطاطا (العدد / السعر):</label>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <input type="number" id="genChipsQty" min="0" value="0" placeholder="العدد" class="bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs text-center font-bold">
+                        <input type="number" id="genChipsPrice" min="0" value="0" placeholder="السعر" class="bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs text-center font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-300 block mb-1 font-bold">براد (العدد / السعر):</label>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <input type="number" id="genBaradQty" min="0" value="0" placeholder="العدد" class="bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs text-center font-bold">
+                        <input type="number" id="genBaradPrice" min="0" value="0" placeholder="السعر" class="bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs text-center font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-amber-300 block mb-1 font-bold">أركيلة (العدد / السعر):</label>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <input type="number" id="genArkilaQty" min="0" value="0" placeholder="العدد" class="bg-slate-900 text-white border border-amber-600/50 rounded-xl p-2 text-xs text-center font-bold">
+                        <input type="number" id="genArkilaPrice" min="0" value="0" placeholder="السعر" class="bg-slate-900 text-white border border-amber-600/50 rounded-xl p-2 text-xs text-center font-bold">
+                    </div>
+                </div>
+                <div>
+                    <button onclick="checkoutGeneralSales()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl shadow-lg shadow-amber-500/20 transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus-circle"></i> تثبيت المبيعات
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- تسعيرة الشاشات بالساعة الديناميكية -->
+        <div class="bg-slate-900/80 rounded-2xl p-5 border border-slate-800 shadow-sm">
+            <h2 class="text-sm font-black mb-3 flex items-center gap-2 text-blue-400"><i class="fa-solid fa-tags"></i> أسعار الساعة الحالية للشاشات</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs" id="pricingDisplayContainer"></div>
+        </div>
+
+        <!-- الشاشات النشطة -->
+        <div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black flex items-center gap-2"><i class="fa-solid fa-desktop text-emerald-400"></i> إدارة الشاشات والجلسات المباشرة</h2>
+                <button onclick="addNewScreen()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow transition"><i class="fa-solid fa-plus"></i> إضافة شاشة جديدة</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="screensContainer"></div>
+        </div>
+
+        <!-- لوحة ملخص إحصائيات الشاشات -->
+        <div class="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-xl">
+            <h2 class="text-lg font-black mb-5 flex items-center gap-2 text-blue-400">
+                <i class="fa-solid fa-chart-pie"></i> لوحة ملخص إحصائيات الشاشات والأداء
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="screensSummaryContainer"></div>
+        </div>
+
+        <!-- سجل المصاريف والحركات التفصيلية -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- المصاريف -->
+            <div class="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-xl">
+                <h2 class="text-base font-black mb-4 flex items-center gap-2 text-rose-400">
+                    <i class="fa-solid fa-receipt"></i> سجل المصاريف اليومية
+                </h2>
+                <div class="space-y-3 max-h-80 overflow-y-auto" id="expensesListContainer">
+                    <p class="text-xs text-slate-500 text-center py-4">لا توجد مصاريف مسجلة اليوم.</p>
+                </div>
+            </div>
+
+            <!-- سجل الحركات -->
+            <div class="lg:col-span-2 bg-slate-900/95 rounded-3xl p-6 border border-slate-800 shadow-xl">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                    <h2 class="text-base font-black flex items-center gap-2 text-amber-400">
+                        <i class="fa-solid fa-list-check"></i> سجل حركات وتفاصيل العمليات
+                    </h2>
+                    <span class="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-xl font-bold" id="totalLogsCount">عدد الحركات: 0</span>
+                </div>
+                <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                    <table class="w-full text-right border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-950/70 border-b border-slate-800 text-slate-400 uppercase">
+                                <th class="py-2.5 px-3">القسم / الشاشة</th>
+                                <th class="py-2.5 px-3">الوقت</th>
+                                <th class="py-2.5 px-3">الوضع</th>
+                                <th class="py-2.5 px-3">الساعات</th>
+                                <th class="py-2.5 px-3">المبيعات</th>
+                                <th class="py-2.5 px-3">الإجمالي</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityLogsTableBody" class="divide-y divide-slate-800/50">
+                            <tr><td colspan="6" class="py-4 text-center text-slate-500">لا توجد حركات مسجلة حتى الآن اليوم.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- نافذة الإعدادات -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-black text-white flex items-center gap-2"><i class="fa-solid fa-gear text-amber-400"></i> إعدادات تسعير الشاشات</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="text-slate-300 block mb-1 font-bold">سعر ساعة الفردي:</label>
+                    <input type="number" id="setPrice1" class="w-full bg-slate-950 text-white border border-slate-800 rounded-xl p-2.5 font-bold">
+                </div>
+                <div>
+                    <label class="text-slate-300 block mb-1 font-bold">سعر ساعة الثنائي:</label>
+                    <input type="number" id="setPrice2" class="w-full bg-slate-950 text-white border border-slate-800 rounded-xl p-2.5 font-bold">
+                </div>
+                <div>
+                    <label class="text-slate-300 block mb-1 font-bold">سعر ساعة الثلاثي:</label>
+                    <input type="number" id="setPrice3" class="w-full bg-slate-950 text-white border border-slate-800 rounded-xl p-2.5 font-bold">
+                </div>
+                <div>
+                    <label class="text-slate-300 block mb-1 font-bold">سعر ساعة الرباعي:</label>
+                    <input type="number" id="setPrice4" class="w-full bg-slate-950 text-white border border-slate-800 rounded-xl p-2.5 font-bold">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="saveSettings()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl transition text-xs">حفظ التغييرات</button>
+                <button onclick="closeSettingsModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition text-xs">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تسجيل المصروفات -->
+    <div id="expensesModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-black text-white flex items-center gap-2"><i class="fa-solid fa-receipt text-rose-400"></i> إضافة مصروف جديد</h3>
+                <button onclick="closeExpensesModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="text-slate-300 block mb-1 font-bold">بيان المصروف (عنوان):</label>
+                    <input type="text" id="expenseTitle" placeholder="مثال: فاتورة كهرباء، شراء معسل..." class="w-full bg-slate-950 text-white border border-slate-800 rounded-xl p-2.5">
+                </div>
+                <div>
+                    <label class="text-slate-300 block mb-1 font-bold">المبلغ (ليرة):</label>
+                    <input type="number" id="expenseAmount" min="0" placeholder="0" class="w-full bg-slate-950 text-white border border-slate-800 rounded-xl p-2.5 font-bold text-rose-400">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="addExpense()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-2.5 rounded-xl transition text-xs">حفظ المصروف</button>
+                <button onclick="closeExpensesModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition text-xs">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تقرير الـ PDF للشاشتين 3 و 4 -->
+    <div id="pdfReportModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-2xl space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-black text-white flex items-center gap-2"><i class="fa-solid fa-file-pdf text-emerald-400"></i> تقرير الأداء المالي للشاشتين (3 و 4)</h3>
+                <button onclick="closePdfReportModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div id="pdfReportContent" class="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4 text-xs text-slate-200">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-base font-black text-amber-400">GOAT GAMING PRO</h2>
+                        <span class="text-[10px] text-slate-400">تقرير تفصيلي للشاشات 3 و 4</span>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-[10px] text-slate-400 block">تاريخ التقرير:</span>
+                        <strong class="text-white" id="reportDate"></strong>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4" id="pdfReportScreensSummary"></div>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button onclick="downloadPDF()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> تحميل التقرير PDF
+                </button>
+                <button onclick="closePdfReportModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition text-xs">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- كود الجافاسكريبت التطبيقي المتكامل -->
+    <script>
+        let hourlyPrices = JSON.parse(localStorage.getItem('goat_hourlyPrices')) || { 1: 60, 2: 60, 3: 100, 4: 120 };
+        const playerLabels = { 1: "فردي (لاعب)", 2: "ثنائي (لاعبين)", 3: "ثلاثي (3 لاعبين)", 4: "رباعي (4 لاعبين)" };
+
+        let screens = JSON.parse(localStorage.getItem('goat_screens')) || [
+            { id: 1, name: "الشاشة رقم 1", players: 1, startTime: "", endTime: "", biscuitQty: 0, biscuitPrice: 0, chipsQty: 0, chipsPrice: 0, baradQty: 0, baradPrice: 0, arkilaQty: 0, arkilaPrice: 0, customDetails: "", revenue: 0, sessionsCount: 0, totalHours: 0, totalBiscuit: 0, totalChips: 0, totalBarad: 0, totalArkila: 0 },
+            { id: 2, name: "الشاشة رقم 2", players: 1, startTime: "", endTime: "", biscuitQty: 0, biscuitPrice: 0, chipsQty: 0, chipsPrice: 0, baradQty: 0, baradPrice: 0, arkilaQty: 0, arkilaPrice: 0, customDetails: "", revenue: 0, sessionsCount: 0, totalHours: 0, totalBiscuit: 0, totalChips: 0, totalBarad: 0, totalArkila: 0 },
+            { id: 3, name: "الشاشة رقم 3", players: 1, startTime: "", endTime: "", biscuitQty: 0, biscuitPrice: 0, chipsQty: 0, chipsPrice: 0, baradQty: 0, baradPrice: 0, arkilaQty: 0, arkilaPrice: 0, customDetails: "", revenue: 0, sessionsCount: 0, totalHours: 0, totalBiscuit: 0, totalChips: 0, totalBarad: 0, totalArkila: 0 },
+            { id: 4, name: "الشاشة رقم 4", players: 1, startTime: "", endTime: "", biscuitQty: 0, biscuitPrice: 0, chipsQty: 0, chipsPrice: 0, baradQty: 0, baradPrice: 0, arkilaQty: 0, arkilaPrice: 0, customDetails: "", revenue: 0, sessionsCount: 0, totalHours: 0, totalBiscuit: 0, totalChips: 0, totalBarad: 0, totalArkila: 0 }
+        ];
+
+        let activityLogs = JSON.parse(localStorage.getItem('goat_activityLogs')) || [];
+        let expensesList = JSON.parse(localStorage.getItem('goat_expensesList')) || [];
+        let generalSalesTotal = parseFloat(localStorage.getItem('goat_generalSalesTotal')) || 0;
+
+        function saveToLocalStorage() {
+            localStorage.setItem('goat_hourlyPrices', JSON.stringify(hourlyPrices));
+            localStorage.setItem('goat_screens', JSON.stringify(screens));
+            localStorage.setItem('goat_activityLogs', JSON.stringify(activityLogs));
+            localStorage.setItem('goat_expensesList', JSON.stringify(expensesList));
+            localStorage.setItem('goat_generalSalesTotal', generalSalesTotal.toString());
+        }
+
+        function renderPricingDisplay() {
+            const container = document.getElementById('pricingDisplayContainer');
+            container.innerHTML = `
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 flex justify-between"><span>فردي:</span> <strong class="text-white">${hourlyPrices[1]} ل/س</strong></div>
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 flex justify-between"><span>ثنائي:</span> <strong class="text-white">${hourlyPrices[2]} ل/س</strong></div>
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 flex justify-between"><span>ثلاثي:</span> <strong class="text-white">${hourlyPrices[3]} ل/س</strong></div>
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 flex justify-between"><span>رباعي:</span> <strong class="text-white">${hourlyPrices[4]} ل/س</strong></div>
+            `;
+        }
+
+        function renderScreens() {
+            renderPricingDisplay();
+            const container = document.getElementById('screensContainer');
+            const summaryContainer = document.getElementById('screensSummaryContainer');
+            container.innerHTML = '';
+            summaryContainer.innerHTML = '';
+
+            screens.forEach(s => {
+                let screenCost = 0;
+                let hoursCalc = 0;
+
+                if (s.startTime && s.endTime) {
+                    const parseTimeToMinutes = (timeStr) => {
+                        if (!timeStr) return 0;
+                        if (timeStr.includes('M') || timeStr.includes('m')) {
+                            const parts = timeStr.trim().split(' ');
+                            const timePart = parts[0];
+                            const modifier = parts[1] || '';
+                            let [h, m] = timePart.split(':').map(Number);
+                            if (modifier.toUpperCase() === 'PM' && h < 12) h += 12;
+                            if (modifier.toUpperCase() === 'AM' && h === 12) h = 0;
+                            return (h || 0) * 60 + (m || 0);
+                        } else {
+                            const [h, m] = timeStr.split(':').map(Number);
+                            return (h || 0) * 60 + (m || 0);
+                        }
+                    };
+
+                    let startTotalMins = parseTimeToMinutes(s.startTime);
+                    let endTotalMins = parseTimeToMinutes(s.endTime);
+
+                    if (endTotalMins < startTotalMins) endTotalMins += 24 * 60;
+                    const diffMins = endTotalMins - startTotalMins;
+                    if (diffMins > 0) {
+                        hoursCalc = diffMins / 60;
+                        screenCost = Math.round(hoursCalc * hourlyPrices[s.players]);
+                    }
+                }
+
+                const totalProductsPrice = (parseFloat(s.biscuitPrice) || 0) + (parseFloat(s.chipsPrice) || 0) + (parseFloat(s.baradPrice) || 0) + (parseFloat(s.arkilaPrice) || 0);
+                const totalSessionCost = screenCost + totalProductsPrice;
+
+                // بطاقة الشاشة
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 rounded-3xl p-6 border border-slate-800 shadow-xl space-y-4";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-base shadow">${s.id}</div>
+                            <div>
+                                <h3 class="font-black text-base text-white">${s.name}</h3>
+                                <span class="text-xs text-blue-400 font-bold">ساعة: ${hourlyPrices[s.players]} ليرة</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="text-left">
+                                <span class="text-[10px] text-slate-400 block font-bold">الإجمالي:</span>
+                                <strong class="text-emerald-400 text-lg font-black">${totalSessionCost} ليرة</strong>
+                            </div>
+                            ${s.id > 4 ? `<button onclick="deleteScreen(${s.id})" class="text-rose-400 hover:text-rose-600 p-2 rounded-xl transition" title="حذف الشاشة"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 block mb-1 font-bold">الوضع (اللاعبين):</span>
+                            <select onchange="updateScreenData(${s.id}, 'players', this.value)" class="w-full bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs font-bold outline-none">
+                                <option value="1" ${s.players==1?'selected':''}>فردي (${hourlyPrices[1]}ل)</option>
+                                <option value="2" ${s.players==2?'selected':''}>ثنائي (${hourlyPrices[2]}ل)</option>
+                                <option value="3" ${s.players==3?'selected':''}>ثلاثي (${hourlyPrices[3]}ل)</option>
+                                <option value="4" ${s.players==4?'selected':''}>رباعي (${hourlyPrices[4]}ل)</option>
+                            </select>
+                        </div>
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 block mb-1 font-bold">وقت البدء:</span>
+                            <div class="flex gap-1">
+                                <input type="time" value="${s.startTime}" oninput="updateScreenData(${s.id}, 'startTime', this.value)" class="w-full bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs outline-none">
+                                <button onclick="setNowTime(${s.id}, 'start')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-2 rounded-xl text-xs font-bold">الآن</button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                            <span class="text-[11px] text-slate-400 block mb-1 font-bold">وقت النهاية:</span>
+                            <div class="flex gap-1">
+                                <input type="time" value="${s.endTime}" oninput="updateScreenData(${s.id}, 'endTime', this.value)" class="w-full bg-slate-900 text-white border border-slate-700 rounded-xl p-2 text-xs outline-none">
+                                <button onclick="setNowTime(${s.id}, 'end')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 px-2 rounded-xl text-xs font-bold">الآن</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/40 p-3 rounded-2xl border border-slate-800 space-y-2">
+                        <span class="text-xs text-amber-400 font-bold block"><i class="fa-solid fa-cookie-bite"></i> كميات وأسعار مبيعات الشاشة:</span>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-1">بسكوت:</span>
+                                <div class="grid grid-cols-2 gap-1">
+                                    <input type="number" min="0" id="biscuitQty_${s.id}" value="${s.biscuitQty}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-slate-700 rounded-lg p-1 text-center text-white font-bold">
+                                    <input type="number" min="0" id="biscuitPrice_${s.id}" value="${s.biscuitPrice}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-slate-700 rounded-lg p-1 text-center text-amber-300 font-bold">
+                                </div>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-1">بطاطا:</span>
+                                <div class="grid grid-cols-2 gap-1">
+                                    <input type="number" min="0" id="chipsQty_${s.id}" value="${s.chipsQty}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-slate-700 rounded-lg p-1 text-center text-white font-bold">
+                                    <input type="number" min="0" id="chipsPrice_${s.id}" value="${s.chipsPrice}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-slate-700 rounded-lg p-1 text-center text-amber-300 font-bold">
+                                </div>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 block mb-1">براد:</span>
+                                <div class="grid grid-cols-2 gap-1">
+                                    <input type="number" min="0" id="baradQty_${s.id}" value="${s.baradQty}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-slate-700 rounded-lg p-1 text-center text-white font-bold">
+                                    <input type="number" min="0" id="baradPrice_${s.id}" value="${s.baradPrice}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-slate-700 rounded-lg p-1 text-center text-amber-300 font-bold">
+                                </div>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-xl border border-amber-600/30">
+                                <span class="text-[10px] text-amber-300 block mb-1">أركيلة:</span>
+                                <div class="grid grid-cols-2 gap-1">
+                                    <input type="number" min="0" id="arkilaQty_${s.id}" value="${s.arkilaQty}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-amber-600/50 rounded-lg p-1 text-center text-white font-bold">
+                                    <input type="number" min="0" id="arkilaPrice_${s.id}" value="${s.arkilaPrice}" oninput="updateScreenValue(${s.id})" class="bg-slate-950 border border-amber-600/50 rounded-lg p-1 text-center text-amber-300 font-bold">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <input type="text" id="details_${s.id}" value="${s.customDetails}" placeholder="ملاحظات الشاشة..." oninput="updateScreenValue(${s.id})" class="w-full bg-slate-950/60 text-white border border-slate-800 rounded-xl p-2.5 text-xs outline-none focus:border-blue-500">
+                    </div>
+
+                    <button id="checkoutBtn_${s.id}" onclick="checkoutScreen(${s.id}, ${totalSessionCost}, ${hoursCalc})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl shadow-lg shadow-emerald-600/20 transition text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cash-register"></i> تثبيت وإضافة المبلغ للصندوق (<span id="totalText_${s.id}">${totalSessionCost}</span> ليرة)
+                    </button>
+                `;
+                container.appendChild(card);
+
+                // بطاقة الملخص
+                const summaryCard = document.createElement('div');
+                summaryCard.className = "bg-slate-950/70 rounded-2xl p-4 border border-slate-800 flex flex-col justify-between";
+                summaryCard.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-black text-white text-sm">${s.name}</span>
+                            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-md font-bold">${s.sessionsCount} جلسات</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-300">
+                            <div class="flex justify-between"><span>أرباح الشاشة:</span> <strong class="text-emerald-400 text-xs font-black">${s.revenue} ليرة</strong></div>
+                            <div class="flex justify-between"><span>ساعات العمل:</span> <strong class="text-amber-400 text-xs font-black">${s.totalHours.toFixed(1)} ساعة</strong></div>
+                            <div class="flex justify-between"><span>المنتجات (ب/ط/ب/أ):</span> <strong class="text-blue-300 text-[11px]">${s.totalBiscuit}/${s.totalChips}/${s.totalBarad}/${s.totalArkila}</strong></div>
+                        </div>
+                    </div>
+                `;
+                summaryContainer.appendChild(summaryCard);
+            });
+            updateTotals();
+            renderActivityLogs();
+            renderExpensesList();
+            saveToLocalStorage();
+        }
+
+        function updateScreenData(id, field, value) {
+            const screen = screens.find(s => s.id === id);
+            if (screen) {
+                if (['players', 'biscuitQty', 'biscuitPrice', 'chipsQty', 'chipsPrice', 'baradQty', 'baradPrice', 'arkilaQty', 'arkilaPrice'].includes(field)) {
+                    screen[field] = value === "" ? 0 : parseFloat(value);
+                } else {
+                    screen[field] = value;
+                }
+                renderScreens();
+            }
+        }
+
+        // دالة مخصصة لتحديث الحسابات والإجماليات لحظياً دون إعادة رسم كامل البطاقة (لتجنب فقدان التركيز بالحقول)
+        function updateScreenValue(id) {
+            const screen = screens.find(s => s.id === id);
+            if (!screen) return;
+
+            screen.biscuitQty = parseFloat(document.getElementById(`biscuitQty_${id}`).value) || 0;
+            screen.biscuitPrice = parseFloat(document.getElementById(`biscuitPrice_${id}`).value) || 0;
+            screen.chipsQty = parseFloat(document.getElementById(`chipsQty_${id}`).value) || 0;
+            screen.chipsPrice = parseFloat(document.getElementById(`chipsPrice_${id}`).value) || 0;
+            screen.baradQty = parseFloat(document.getElementById(`baradQty_${id}`).value) || 0;
+            screen.baradPrice = parseFloat(document.getElementById(`baradPrice_${id}`).value) || 0;
+            screen.arkilaQty = parseFloat(document.getElementById(`arkilaQty_${id}`).value) || 0;
+            screen.arkilaPrice = parseFloat(document.getElementById(`arkilaPrice_${id}`).value) || 0;
+            screen.customDetails = document.getElementById(`details_${id}`).value;
+
+            // حساب التكلفة فورا
+            let screenCost = 0;
+            let hoursCalc = 0;
+            if (screen.startTime && screen.endTime) {
+                const parseTimeToMinutes = (timeStr) => {
+                    if (!timeStr) return 0;
+                    if (timeStr.includes('M') || timeStr.includes('m')) {
+                        const parts = timeStr.trim().split(' ');
+                        let [h, m] = parts[0].split(':').map(Number);
+                        if (parts[1]?.toUpperCase() === 'PM' && h < 12) h += 12;
+                        if (parts[1]?.toUpperCase() === 'AM' && h === 12) h = 0;
+                        return (h || 0) * 60 + (m || 0);
+                    } else {
+                        const [h, m] = timeStr.split(':').map(Number);
+                        return (h || 0) * 60 + (m || 0);
+                    }
+                };
+                let startM = parseTimeToMinutes(screen.startTime);
+                let endM = parseTimeToMinutes(screen.endTime);
+                if (endM < startM) endM += 24 * 60;
+                const diff = endM - startM;
+                if (diff > 0) {
+                    hoursCalc = diff / 60;
+                    screenCost = Math.round(hoursCalc * hourlyPrices[screen.players]);
+                }
+            }
+
+            const totalProducts = screen.biscuitPrice + screen.chipsPrice + screen.baradPrice + screen.arkilaPrice;
+            const totalCost = screenCost + totalProducts;
+
+            // تحديث النصوص في الواجهة مباشرة دون إعادة رسم العنصر
+            document.getElementById(`totalText_${id}`).innerText = totalCost;
+            
+            // تحديث الزر ودالة التثبيت بالقيم الجديدة
+            const btn = document.getElementById(`checkoutBtn_${id}`);
+            btn.setAttribute('onclick', `checkoutScreen(${id}, ${totalCost}, ${hoursCalc})`);
+
+            updateTotals();
+            saveToLocalStorage();
+        }
+
+        function setNowTime(id, type) {
+            const now = new Date();
+            const timeStr = now.toTimeString().substring(0, 5);
+            updateScreenData(id, type === 'start' ? 'startTime' : 'endTime', timeStr);
+        }
+
+        function addNewScreen() {
+            const newId = screens.length > 0 ? Math.max(...screens.map(s => s.id)) + 1 : 1;
+            screens.push({
+                id: newId, name: `الشاشة رقم ${newId}`, players: 1, startTime: "", endTime: "",
+                biscuitQty: 0, biscuitPrice: 0, chipsQty: 0, chipsPrice: 0, baradQty: 0, baradPrice: 0, arkilaQty: 0, arkilaPrice: 0,
+                customDetails: "", revenue: 0, sessionsCount: 0, totalHours: 0, totalBiscuit: 0, totalChips: 0, totalBarad: 0, totalArkila: 0
+            });
+            renderScreens();
+        }
+
+        function deleteScreen(id) {
+            if (confirm("هل أنت متأكد من حذف هذه الشاشة؟")) {
+                screens = screens.filter(s => s.id !== id);
+                renderScreens();
+            }
+        }
+
+        function checkoutScreen(id, totalCost, hoursCalc) {
+            const screen = screens.find(s => s.id === id);
+            if (screen) {
+                if (totalCost <= 0) {
+                    alert("الرجاء تحديد أوقات أو أسعار صحيحة قبل التثبيت!");
+                    return;
+                }
+
+                const logEntry = {
+                    screenName: screen.name,
+                    timeRange: (screen.startTime && screen.endTime) ? `${screen.startTime} إلى ${screen.endTime}` : "بدون أوقات",
+                    playerMode: playerLabels[screen.players],
+                    hours: hoursCalc > 0 ? hoursCalc.toFixed(2) + " س" : "-",
+                    productsInfo: `ب:${screen.biscuitQty}(${screen.biscuitPrice}ل) | بط:${screen.chipsQty}(${screen.chipsPrice}ل) | بر:${screen.baradQty}(${screen.baradPrice}ل) | أر:${screen.arkilaQty}(${screen.arkilaPrice}ل)`,
+                    details: screen.customDetails || "-",
+                    total: totalCost,
+                    timestamp: new Date().toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' })
+                };
+                activityLogs.unshift(logEntry);
+
+                screen.revenue += totalCost;
+                screen.sessionsCount += 1;
+                screen.totalHours += hoursCalc;
+                screen.totalBiscuit += screen.biscuitQty;
+                screen.totalChips += screen.chipsQty;
+                screen.totalBarad += screen.baradQty;
+                screen.totalArkila += screen.arkilaQty;
+
+                // تصفير حقول الجلسة
+                screen.startTime = "";
+                screen.endTime = "";
+                screen.biscuitQty = 0; screen.biscuitPrice = 0;
+                screen.chipsQty = 0; screen.chipsPrice = 0;
+                screen.baradQty = 0; screen.baradPrice = 0;
+                screen.arkilaQty = 0; screen.arkilaPrice = 0;
+                screen.customDetails = "";
+
+                renderScreens();
+            }
+        }
+
+        function checkoutGeneralSales() {
+            const bP = parseFloat(document.getElementById('genBiscuitPrice').value) || 0;
+            const cP = parseFloat(document.getElementById('genChipsPrice').value) || 0;
+            const barP = parseFloat(document.getElementById('genBaradPrice').value) || 0;
+            const arkP = parseFloat(document.getElementById('genArkilaPrice').value) || 0;
+            const totalGen = bP + cP + barP + arkP;
+
+            if (totalGen <= 0) {
+                alert("الرجاء إدخال أسعار المنتجات أولاً!");
+                return;
+            }
+
+            const logEntry = {
+                screenName: "🛒 مبيعات خارجية",
+                timeRange: "فوري",
+                playerMode: "منتجات",
+                hours: "-",
+                productsInfo: `بسكوت(${document.getElementById('genBiscuitQty').value}) | بطاطا(${document.getElementById('genChipsQty').value}) | براد(${document.getElementById('genBaradQty').value}) | أركيلة(${document.getElementById('genArkilaQty').value})`,
+                details: "مبيعات مباشرة",
+                total: totalGen,
+                timestamp: new Date().toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' })
+            };
+            activityLogs.unshift(logEntry);
+            generalSalesTotal += totalGen;
+
+            document.getElementById('genBiscuitQty').value = 0; document.getElementById('genBiscuitPrice').value = 0;
+            document.getElementById('genChipsQty').value = 0; document.getElementById('genChipsPrice').value = 0;
+            document.getElementById('genBaradQty').value = 0; document.getElementById('genBaradPrice').value = 0;
+            document.getElementById('genArkilaQty').value = 0; document.getElementById('genArkilaPrice').value = 0;
+
+            renderScreens();
+        }
+
+        function openSettingsModal() {
+            document.getElementById('setPrice1').value = hourlyPrices[1];
+            document.getElementById('setPrice2').value = hourlyPrices[2];
+            document.getElementById('setPrice3').value = hourlyPrices[3];
+            document.getElementById('setPrice4').value = hourlyPrices[4];
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
+        function saveSettings() {
+            hourlyPrices[1] = parseFloat(document.getElementById('setPrice1').value) || 60;
+            hourlyPrices[2] = parseFloat(document.getElementById('setPrice2').value) || 60;
+            hourlyPrices[3] = parseFloat(document.getElementById('setPrice3').value) || 100;
+            hourlyPrices[4] = parseFloat(document.getElementById('setPrice4').value) || 120;
+            closeSettingsModal();
+            renderScreens();
+        }
+
+        function openExpensesModal() { document.getElementById('expensesModal').classList.remove('hidden'); }
+        function closeExpensesModal() { document.getElementById('expensesModal').classList.add('hidden'); }
+        function addExpense() {
+            const title = document.getElementById('expenseTitle').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
+            if (!title || amount <= 0) {
+                alert("الرجاء إدخال تفاصيل ومبلغ المصروف بشكل صحيح!");
+                return;
+            }
+            expensesList.unshift({ title, amount, time: new Date().toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' }) });
+            document.getElementById('expenseTitle').value = '';
+            document.getElementById('expenseAmount').value = '';
+            closeExpensesModal();
+            renderScreens();
+        }
+
+        function renderExpensesList() {
+            const container = document.getElementById('expensesListContainer');
+            container.innerHTML = '';
+            if (expensesList.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">لا توجد مصاريف مسجلة اليوم.</p>`;
+                return;
+            }
+            expensesList.forEach((exp, idx) => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-950/60 p-3 rounded-2xl border border-slate-800 flex justify-between items-center text-xs";
+                div.innerHTML = `
+                    <div>
+                        <strong class="text-white block">${exp.title}</strong>
+                        <span class="text-[10px] text-slate-400 font-mono">${exp.time}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <strong class="text-rose-400 font-black">-${exp.amount} ليرة</strong>
+                        <button onclick="deleteExpense(${idx})" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function deleteExpense(idx) {
+            expensesList.splice(idx, 1);
+            renderScreens();
+        }
+
+        function updateTotals() {
+            const screensTotal = screens.reduce((sum, s) => sum + s.revenue, 0);
+            const totalRevenue = screensTotal + generalSalesTotal;
+            const totalExpenses = expensesList.reduce((sum, e) => sum + e.amount, 0);
+            const netProfit = totalRevenue - totalExpenses;
+
+            document.getElementById('totalRevenue').innerText = totalRevenue + " ليرة";
+            document.getElementById('netProfit').innerText = netProfit + " ليرة";
+        }
+
+        function renderActivityLogs() {
+            const tbody = document.getElementById('activityLogsTableBody');
+            const countBadge = document.getElementById('totalLogsCount');
+            tbody.innerHTML = '';
+            countBadge.innerText = `عدد الحركات: ${activityLogs.length}`;
+
+            if (activityLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500">لا توجد حركات مسجلة حتى الآن اليوم.</td></tr>`;
+                return;
+            }
+
+            activityLogs.forEach((log) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-950/40 transition";
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 font-bold ${log.screenName.includes('مبيعات') ? 'text-amber-400' : 'text-white'}">${log.screenName}</td>
+                    <td class="py-2.5 px-3 text-amber-300 font-mono">${log.timestamp}</td>
+                    <td class="py-2.5 px-3 text-blue-300 font-bold">${log.playerMode}</td>
+                    <td class="py-2.5 px-3 text-emerald-300 font-mono font-bold">${log.hours}</td>
+                    <td class="py-2.5 px-3 text-slate-300">${log.productsInfo}</td>
+                    <td class="py-2.5 px-3 text-emerald-400 font-black">${log.total} ليرة</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openPdfReportModal() {
+            document.getElementById('reportDate').innerText = new Date().toLocaleDateString('ar-SY');
+            const container = document.getElementById('pdfReportScreensSummary');
+            container.innerHTML = '';
+
+            const targetScreens = screens.filter(s => s.id === 3 || s.id === 4);
+            targetScreens.forEach(s => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2";
+                div.innerHTML = `
+                    <h4 class="font-black text-amber-400 text-sm">${s.name}</h4>
+                    <div class="space-y-1 text-xs text-slate-300">
+                        <div class="flex justify-between"><span>إجمالي الأرباح:</span> <strong class="text-emerald-400">${s.revenue} ليرة</strong></div>
+                        <div class="flex justify-between"><span>عدد الجلسات:</span> <strong>${s.sessionsCount}</strong></div>
+                        <div class="flex justify-between"><span>ساعات العمل:</span> <strong>${s.totalHours.toFixed(1)} س</strong></div>
+                        <div class="flex justify-between"><span>مبيعات المنتجات:</span> <strong>ب:${s.totalBiscuit} | بط:${s.totalChips} | بر:${s.totalBarad} | أر:${s.totalArkila}</strong></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('pdfReportModal').classList.remove('hidden');
+        }
+        function closePdfReportModal() { document.getElementById('pdfReportModal').classList.add('hidden'); }
+
+        function downloadPDF() {
+            const element = document.getElementById('pdfReportContent');
+            const opt = {
+                margin: 10,
+                filename: 'goat-gaming-screens-3-4-report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
+
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ screens, activityLogs, expensesList, generalSalesTotal, hourlyPrices }));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", "goat_gaming_backup.json");
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = "fa-solid fa-sun text-sm";
+            } else {
+                html.classList.add('dark');
+                icon.className = "fa-solid fa-moon text-sm";
+            }
+        }
+
+        function resetDailyRevenue() {
+            if (confirm("هل تريد تصفير الصندوق وإحصائيات اليوم بالكامل؟")) {
+                screens.forEach(s => {
+                    s.revenue = 0; s.sessionsCount = 0; s.totalHours = 0;
+                    s.totalBiscuit = 0; s.totalChips = 0; s.totalBarad = 0; s.totalArkila = 0;
+                });
+                generalSalesTotal = 0;
+                activityLogs = [];
+                expensesList = [];
+                renderScreens();
+            }
+        }
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed', err));
+            });
+        }
+
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installContainer').classList.remove('hidden');
+        });
+
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('installContainer').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        renderScreens();
+    </script>
+</body>
+</html>
